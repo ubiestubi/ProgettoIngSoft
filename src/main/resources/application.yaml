@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: ProgettoIngSoft
+  datasource:
+    url: jdbc:mysql://localhost:3306/Bugboard26
+    username: rootJava
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        # Nomi di tabelle e colonne esattamente come le ho scritte con Workbench.
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        # Le colonne booleane del db devono essere TINYINT, non BIT (che è default in Hibernate).
+        type:
+          preferred_boolean_jdbc_type: TINYINT
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
