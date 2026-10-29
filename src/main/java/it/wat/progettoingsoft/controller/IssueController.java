@@ -1,7 +1,7 @@
 package it.wat.progettoingsoft.controller;
 
 import it.wat.progettoingsoft.costanti.CriterioOrdinamento;
-import it.wat.progettoingsoft.costanti.Priorità;
+import it.wat.progettoingsoft.costanti.Priorita;
 import it.wat.progettoingsoft.costanti.StatoIssue;
 import it.wat.progettoingsoft.costanti.TipoIssue;
 import it.wat.progettoingsoft.dto.CreaIssueRequest;
@@ -27,12 +27,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Issue: vista riepilogativa, ricerca, dettaglio, creazione e chiusura (docs/ContrattoApi.md, sezione
- * Issue). Lettura per tutti gli utenti loggati (anche STAKEHOLDER), creazione per gli utenti interni,
+ * Issue: vista riepilogativa, ricerca, dettaglio, creazione e chiusura.
+ * Lettura per tutti gli utenti loggati, creazione per gli utenti interni,
  * chiusura solo per l'amministratore.
  */
 @RestController
@@ -45,22 +44,22 @@ public class IssueController {
     private final AmministratoreService amministratoreService;
     private final IssueService issueService;
 
-    // Req. 3: filtri opzionali (assenti = nessun filtro); senza ordinamento, più recenti prima.
+    // Filtri opzionali (assenti = nessun filtro). Se non c'è ordinamento allora più recenti prima.
     @GetMapping
     public List<IssueDTO> visualizzaIssues(@RequestParam(required = false) TipoIssue tipo,
                                            @RequestParam(required = false) StatoIssue stato,
-                                           @RequestParam(required = false) Priorità priorita,
+                                           @RequestParam(required = false) Priorita priorita,
                                            @RequestParam(required = false) CriterioOrdinamento ordinamento,
                                            @RequestParam(defaultValue = "false") boolean crescente) {
         return aDto(utenteService.visualizzaIssues(tipo, stato, priorita, ordinamento, crescente));
     }
 
-    // Req. 11: come la vista riepilogativa, più la parola chiave su titolo e descrizione.
+    // Come la vista riepilogativa, più la parola chiave su titolo e descrizione.
     @GetMapping("/ricerca")
     public List<IssueDTO> cercaIssue(@RequestParam(required = false) String parolaChiave,
                                      @RequestParam(required = false) TipoIssue tipo,
                                      @RequestParam(required = false) StatoIssue stato,
-                                     @RequestParam(required = false) Priorità priorita,
+                                     @RequestParam(required = false) Priorita priorita,
                                      @RequestParam(required = false) CriterioOrdinamento ordinamento,
                                      @RequestParam(defaultValue = "false") boolean crescente) {
         return aDto(utenteService.cercaIssue(parolaChiave, tipo, stato, priorita, ordinamento, crescente));
@@ -71,8 +70,8 @@ public class IssueController {
         return IssueDTO.da(issueService.findById(id));
     }
 
-    // Byte dell'immagine così come sono stati caricati (niente Base64 né JSON): il client la scarica
-    // solo quando serve, ad es. aprendo il dettaglio. Il formato (PNG, JPEG, ...) non è salvato.
+    // Byte dell'immagine così come sono stati caricati. Il client la scarica
+    // solo quando serve, tipo aprendo il dettaglio, per non sovraccaricare il db.
     @GetMapping("/{id}/immagine")
     public ResponseEntity<byte[]> immagine(@PathVariable Integer id) {
         return ResponseEntity.ok()
@@ -80,7 +79,7 @@ public class IssueController {
                 .body(issueService.getImmagine(id));
     }
 
-    // Req. 2: il creatore è l'utente loggato.
+    // Crea issue
     @PostMapping
     @PreAuthorize("hasAnyRole('AMMINISTRATORE','NORMALE')")
     public ResponseEntity<IssueDTO> creaIssue(@AuthenticationPrincipal UtenteAutenticato utente,
@@ -99,11 +98,11 @@ public class IssueController {
         return IssueDTO.da(issue);
     }
 
+    //Per fare i DTO
     private List<IssueDTO> aDto(List<Issue> issues) {
-        List<IssueDTO> risposta = new ArrayList<>();
-        for (Issue issue : issues) {
-            risposta.add(IssueDTO.da(issue));
-        }
-        return risposta;
+        // Soluzione proposta da SonarQube
+        return issues.stream()
+                .map(IssueDTO::da)
+                .toList();
     }
 }

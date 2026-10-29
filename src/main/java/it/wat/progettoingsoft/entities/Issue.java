@@ -1,6 +1,6 @@
 package it.wat.progettoingsoft.entities;
 
-import it.wat.progettoingsoft.costanti.Priorità;
+import it.wat.progettoingsoft.costanti.Priorita;
 import it.wat.progettoingsoft.costanti.StatoIssue;
 import it.wat.progettoingsoft.costanti.TipoIssue;
 import jakarta.persistence.Column;
@@ -55,10 +55,10 @@ public class Issue {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "priorità", nullable = false)
-    private Priorità priorità;
+    private Priorita priorita;
 
-    // Lunghezza oltre i 16 MB: Hibernate la mappa su LONGBLOB, come la colonna nello schema
-    // (senza length sarebbe TINYBLOB, 255 byte, e la validazione dello schema fallirebbe).
+    // C'è quel numero sulla length che è la dimensione di MEDIUMBLOB più un byte, quindi forza Hibernate a considerarlo
+    //come LONGBLOB, ossia come sta sul db. Perchè non c'è un metodo migliore per dire a Hibernate che è un LONGBLOB
     @Lob
     @Column(name = "immagine", length = 16777216)
     private byte[] immagine;

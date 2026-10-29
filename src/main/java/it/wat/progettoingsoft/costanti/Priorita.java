@@ -1,6 +1,6 @@
 package it.wat.progettoingsoft.costanti;
 
-public enum Priorità {
+public enum Priorita {
     BASSA,
     MEDIA,
     ALTA,

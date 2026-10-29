@@ -7,8 +7,7 @@ import java.util.List;
 
 public interface NotificaRepository extends JpaRepository<Notifica, Integer> {
 
-    // Più recenti prima. IdDesc a parità di data: la colonna è un DATETIME senza frazioni di secondo, e
-    // le notifiche di una riassegnazione (nuovo e vecchio assegnatario) nascono nello stesso secondo.
+    // Più recenti prima, IdDesc a parità di data
     List<Notifica> findByDestinatarioIdOrderByDataDescIdDesc(Integer destinatarioId);
 
     // Solo le non lette, più recenti prima.

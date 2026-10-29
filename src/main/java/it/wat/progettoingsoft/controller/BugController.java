@@ -17,13 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bug: assegnazione e duplicato (solo amministratore), bug assegnati all'utente loggato (solo utenti
- * normali, gli unici a cui si assegnano bug). docs/ContrattoApi.md, sezione Bug.
- * Un id di un'issue che non è un bug dà 404 (BugService.findById).
+ * Bug: assegnazione e contrassegna duplicato (solo amministratore), bug assegnati all'utente loggato (solo utenti
+ * normali, gli unici a cui si assegnano i bug).
  */
 @RestController
 @RequestMapping("/api/bugs")
@@ -34,7 +32,7 @@ public class BugController {
     private final AmministratoreService amministratoreService;
     private final UtenteNormaleService utenteNormaleService;
 
-    // Req. 4: utenteId deve essere un utente normale (altrimenti 404). Bug chiuso → 409.
+    //utenteId deve essere un utente normale (altrimenti 404). Bug chiuso -> 409.
     @PostMapping("/{id}/assegna")
     @PreAuthorize("hasRole('AMMINISTRATORE')")
     public IssueDTO assegna(@PathVariable Integer id, @RequestParam Integer utenteId) {
@@ -44,7 +42,7 @@ public class BugController {
         return IssueDTO.da(bug);
     }
 
-    // Req. 16: segna il bug come duplicato e lo chiude. Già duplicato → 409.
+    //segna il bug come duplicato e lo chiude, senza cancellarlo. Già duplicato -> 409.
     @PostMapping("/{id}/duplicato")
     @PreAuthorize("hasRole('AMMINISTRATORE')")
     public IssueDTO duplicato(@PathVariable Integer id) {
@@ -53,25 +51,25 @@ public class BugController {
         return IssueDTO.da(bug);
     }
 
-    // Req. 4: tutti i bug assegnati, anche chiusi (prima i TODO, poi i più recenti).
+    //restituisce tutti i bug assegnati, anche chiusi (prima gli aperti, poi i più recenti).
     @GetMapping("/assegnati")
     @PreAuthorize("hasRole('NORMALE')")
     public List<IssueDTO> assegnati(@AuthenticationPrincipal UtenteAutenticato utente) {
         return aDto(utenteNormaleService.getBugAssegnati(utente.getId()));
     }
 
-    // Solo i bug assegnati ancora aperti (TODO), più recenti prima.
+    //restituisce solo i bug assegnati ancora aperti, prima i più recenti.
     @GetMapping("/assegnati/aperti")
     @PreAuthorize("hasRole('NORMALE')")
     public List<IssueDTO> assegnatiAperti(@AuthenticationPrincipal UtenteAutenticato utente) {
         return aDto(utenteNormaleService.getBugAssegnatiAperti(utente.getId()));
     }
 
+    //per creare il DTO
     private List<IssueDTO> aDto(List<Bug> bugs) {
-        List<IssueDTO> risposta = new ArrayList<>();
-        for (Bug bug : bugs) {
-            risposta.add(IssueDTO.da(bug));
-        }
-        return risposta;
+        // Soluzione proposta da SonarQube
+        return bugs.stream()
+                .map(IssueDTO::da)
+                .toList();
     }
 }

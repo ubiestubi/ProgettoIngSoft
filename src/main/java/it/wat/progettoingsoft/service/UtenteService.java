@@ -2,13 +2,12 @@ package it.wat.progettoingsoft.service;
 
 import it.wat.progettoingsoft.costanti.CriterioOrdinamento;
 import it.wat.progettoingsoft.entities.Issue;
-import it.wat.progettoingsoft.costanti.Priorità;
+import it.wat.progettoingsoft.costanti.Priorita;
 import it.wat.progettoingsoft.costanti.StatoIssue;
 import it.wat.progettoingsoft.costanti.TipoIssue;
 import it.wat.progettoingsoft.entities.Utente;
 import it.wat.progettoingsoft.repository.IssueRepository;
 import it.wat.progettoingsoft.repository.UtenteRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,9 +26,9 @@ public class UtenteService {
      * opzionali (req. 3). Parametri null = nessun filtro su quel criterio;
      * criterio null = più recenti prima.
      */
-    public List<Issue> visualizzaIssues(TipoIssue tipo, StatoIssue stato, Priorità priorità,
+    public List<Issue> visualizzaIssues(TipoIssue tipo, StatoIssue stato, Priorita priorita,
                                         CriterioOrdinamento criterio, boolean crescente) {
-        return cercaOrdinate(tipo, stato, priorità, null, criterio, crescente);
+        return cercaOrdinate(tipo, stato, priorita, null, criterio, crescente);
     }
 
     /**
@@ -39,62 +38,61 @@ public class UtenteService {
      * tutte le issue che passano i filtri.
      */
     public List<Issue> cercaIssue(String parolaChiave, TipoIssue tipo, StatoIssue stato,
-                                  Priorità priorità, CriterioOrdinamento criterio, boolean crescente) {
+                                  Priorita priorita, CriterioOrdinamento criterio, boolean crescente) {
         String chiave = null;
         if (parolaChiave != null && !parolaChiave.isBlank()) {
             chiave = parolaChiave.trim();
         }
-        return cercaOrdinate(tipo, stato, priorità, chiave, criterio, crescente);
+        return cercaOrdinate(tipo, stato, priorita, chiave, criterio, crescente);
     }
 
     /**
      * Sceglie la query di IssueRepository in base al criterio e alla direzione:
      * l'ordinamento lo fa il DB. Criterio null = più recenti prima.
      */
-    private List<Issue> cercaOrdinate(TipoIssue tipo, StatoIssue stato, Priorità priorità, String chiave,
+    private List<Issue> cercaOrdinate(TipoIssue tipo, StatoIssue stato, Priorita priorita, String chiave,
                                       CriterioOrdinamento criterio, boolean crescente) {
         if (criterio == null) {
-            return issueRepository.cercaPerDataDecrescente(tipo, stato, priorità, chiave);
+            return issueRepository.cercaPerDataDecrescente(tipo, stato, priorita, chiave);
         }
 
         switch (criterio) {
             case DATA -> {
                 if (crescente) {
-                    return issueRepository.cercaPerDataCrescente(tipo, stato, priorità, chiave);
+                    return issueRepository.cercaPerDataCrescente(tipo, stato, priorita, chiave);
                 }
-                return issueRepository.cercaPerDataDecrescente(tipo, stato, priorità, chiave);
+                return issueRepository.cercaPerDataDecrescente(tipo, stato, priorita, chiave);
             }
             case PRIORITA -> {
                 if (crescente) {
-                    return issueRepository.cercaPerPrioritàCrescente(tipo, stato, priorità, chiave);
+                    return issueRepository.cercaPerPrioritaCrescente(tipo, stato, priorita, chiave);
                 }
-                return issueRepository.cercaPerPrioritàDecrescente(tipo, stato, priorità, chiave);
+                return issueRepository.cercaPerPrioritaDecrescente(tipo, stato, priorita, chiave);
             }
             case TITOLO -> {
                 if (crescente) {
-                    return issueRepository.cercaPerTitoloCrescente(tipo, stato, priorità, chiave);
+                    return issueRepository.cercaPerTitoloCrescente(tipo, stato, priorita, chiave);
                 }
-                return issueRepository.cercaPerTitoloDecrescente(tipo, stato, priorità, chiave);
+                return issueRepository.cercaPerTitoloDecrescente(tipo, stato, priorita, chiave);
             }
             case STATO -> {
                 if (crescente) {
-                    return issueRepository.cercaPerStatoCrescente(tipo, stato, priorità, chiave);
+                    return issueRepository.cercaPerStatoCrescente(tipo, stato, priorita, chiave);
                 }
-                return issueRepository.cercaPerStatoDecrescente(tipo, stato, priorità, chiave);
+                return issueRepository.cercaPerStatoDecrescente(tipo, stato, priorita, chiave);
             }
             case TIPO -> {
                 if (crescente) {
-                    return issueRepository.cercaPerTipoCrescente(tipo, stato, priorità, chiave);
+                    return issueRepository.cercaPerTipoCrescente(tipo, stato, priorita, chiave);
                 }
-                return issueRepository.cercaPerTipoDecrescente(tipo, stato, priorità, chiave);
+                return issueRepository.cercaPerTipoDecrescente(tipo, stato, priorita, chiave);
             }
             default -> throw new IllegalArgumentException("Criterio non gestito: " + criterio);
         }
     }
 
     /**
-     * Niente normalizzazione: la colonna Utenti.email usa la collation predefinita di MySQL 8
-     * (case-insensitive), quindi "Mario@X.it" trova già l'utente salvato come "mario@x.it".
+     * Niente normalizzazione: lsiccome siamo in MySQL se cerco "Mario@X.it" trovo già l'utente salvato come "mario@x.it".
      */
     public Optional<Utente> findByEmail(String email) {
         return utenteRepository.findByEmail(email);
@@ -105,11 +103,5 @@ public class UtenteService {
         return utenteRepository.findAllByOrderByCognomeAscNomeAscEmailAsc();
     }
 
-    public Utente findById(Integer id) {
-        Optional<Utente> trovato = utenteRepository.findById(id);
-        if (trovato.isEmpty()) {
-            throw new EntityNotFoundException("Utente non trovato: " + id);
-        }
-        return trovato.get();
-    }
+
 }

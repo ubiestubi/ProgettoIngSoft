@@ -19,10 +19,6 @@ public class BugService {
         return bugRepository.findByAssegnatarioId(utenteId);
     }
 
-    public List<Bug> findAll() {
-        return bugRepository.findAll();
-    }
-
     public Bug findById(Integer id) {
         Optional<Bug> trovato = bugRepository.findById(id);
         if (trovato.isEmpty()) {
@@ -31,9 +27,6 @@ public class BugService {
         return trovato.get();
     }
 
-    public Bug save(Bug bug) {
-        return bugRepository.save(bug);
-    }
 
     public void deleteById(Integer id) {
         bugRepository.deleteById(id);

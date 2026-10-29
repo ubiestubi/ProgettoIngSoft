@@ -3,6 +3,7 @@ package it.wat.progettoingsoft.exceptions;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,7 +32,14 @@ public class GlobalExceptionHandler {
     // 400: corpo JSON che non rispetta le validazioni nel DTO (jakarta validation).
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Errore> validazioneFallita(MethodArgumentNotValidException e) {
-        return risposta(400, e.getBindingResult().getFieldError().getDefaultMessage());
+        //era solo "return risposta(400, e.getBindingResult().getFieldError().getDefaultMessage())" ma sonaqube dice che
+        //getFieldError può essere null, quindi me lo gestisco con un if se è null
+        String messaggio = "Richiesta non valida";
+        FieldError errore = e.getBindingResult().getFieldError();
+        if (errore != null && errore.getDefaultMessage() != null) {
+            messaggio = errore.getDefaultMessage();
+        }
+        return risposta(400, messaggio);
     }
 
     // 400: JSON della richiesta illeggibile, tipo un parametro con un valore sbagliato (ex. tipo=PIPPO).

@@ -5,7 +5,7 @@ import it.wat.progettoingsoft.entities.Notifica;
 import java.time.LocalDateTime;
 
 /**
- * Notifica nel JSON, senza destinatario: è sempre l'utente loggato.
+ * Notifica nel JSON, senza destinatario perchè è sempre l'utente loggato.
  */
 public record NotificaDTO(Integer id, String testo, LocalDateTime data, boolean letta) {
 

@@ -31,11 +31,10 @@ public class AmministratoreService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Amministratore.creaUtente(email, password, ruolo): crea una nuova utenza del
-     * tipo indicato (Amministratore, UtenteNormale o Stakeholder — req. 1).
-     * Nome e cognome vengono salvati senza spazi iniziali/finali, l'email in minuscolo, e deve essere libera;
+     * Amministratore.creaUtente(email, password, ruolo): crea una nuova utenza del tipo indicato.
+     * Nome e cognome vengono salvati senza spazi iniziali/finali, l'email in minuscolo, e deve essere univoca;
      * la password viene salvata come hash BCrypt.
-     * Campi obbligatori e formato dell'email li controlla CreaUtenteRequest (Jakarta Validation).
+     * Campi obbligatori, infine il formato dell'email lo controlla CreaUtenteRequest (con Jakarta Validation).
      */
     public Utente creaUtente(String nome, String cognome, String email, String password, Ruolo ruolo) {
         String emailNormalizzata = email.toLowerCase();
@@ -59,8 +58,8 @@ public class AmministratoreService {
 
     /**
      * Amministratore.assegnaBug(bug, utente): assegna il bug a un utente normale
-     * e lo notifica (req. 4). Un bug CHIUSO non si può assegnare. Se il bug era già
-     * assegnato a un altro utente viene riassegnato e la notifica arriva a entrambi;
+     * e lo notifica. Un bug CHIUSO non si può assegnare. Se il bug era già
+     * assegnato a un altro utente viene riassegnato e la notifica arriva a entrambi ma
      * se era già assegnato allo stesso utente non cambia nulla.
      */
     @Transactional
@@ -87,8 +86,8 @@ public class AmministratoreService {
 
     /**
      * Amministratore.segnaDuplicato(bug): contrassegna il bug come duplicato e lo
-     * chiude immediatamente (req. 16). Un bug già segnato come duplicato non si può
-     * segnare di nuovo; un bug chiuso perché risolto sì. L'assegnatario resta, e se
+     * chiude immediatamente, senza cancellarlo. Un bug già segnato come duplicato non si può
+     * segnare di nuovo ma un bug chiuso perché risolto sì. L'assegnatario resta, e se
      * c'è riceve una notifica.
      */
     @Transactional
@@ -109,9 +108,8 @@ public class AmministratoreService {
     }
 
     /**
-     * chiudiIssue(issue): porta l'issue a CHIUSO. Nel class diagram V2 è un'operazione di
-     * UtenteInterno; qui è riservata all'amministratore. Un'issue già chiusa resta com'è
-     * (nessun errore, nessuna notifica). Se è un bug con un assegnatario, l'assegnatario
+     * chiudiIssue(issue): porta l'issue a CHIUSO. Operazione riservata all'amministratore.
+     * Un'issue già chiusa resta com'è (nessuna notifica). Se è un bug con un assegnatario, l'assegnatario
      * riceve una notifica.
      */
     @Transactional
@@ -123,8 +121,7 @@ public class AmministratoreService {
         issue.setStato(StatoIssue.CHIUSO);
         issueRepository.save(issue);
 
-        if (issue instanceof Bug) {
-            Bug bug = (Bug) issue;
+        if (issue instanceof Bug bug) { //sistemato da sonarqube, mi toglie "Bug bug = (Bug) issue"
             UtenteNormale assegnatario = bug.getAssegnatario();
             if (assegnatario != null) {
                 notificaService.creaNotifica(assegnatario,
@@ -135,8 +132,8 @@ public class AmministratoreService {
 
     /**
      * Amministratore.suggerisciAssegnatari(): utenti normali ordinati per carico
-     * di lavoro corrente crescente (req. 14). Il carico è il numero di bug TODO
-     * assegnati; a parità di carico si ordina per email.
+     * di lavoro corrente crescente. Il carico è il numero di bug TODO (aka aperti)
+     * assegnati, e a parità di carico si ordina per email.
      */
     public List<UtenteNormale> suggerisciAssegnatari() {
         return utenteNormaleRepository.findAllOrdinatiPerCarico(StatoIssue.TODO);

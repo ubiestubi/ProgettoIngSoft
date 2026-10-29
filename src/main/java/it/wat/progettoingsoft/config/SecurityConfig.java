@@ -22,8 +22,8 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 
 /**
  * Configurazione di Spring Security: autenticazione con sessione HTTP (cookie JSESSIONID), permessi con
- * @PreAuthorize("hasRole(...)") sui metodi dei controller (@EnableMethodSecurity).
- * Qui la filter chain fa solo: login pubblico, tutto il resto richiede un utente loggato (accesso negato
+ * @PreAuthorize("hasRole(...)") sui metodi dei controller (@EnableMethodSecurity). Tutto standard.
+ * Qui la filter chain copre solo il login pubblico, tutto il resto richiede un utente loggato (accesso negato
  * per default, anche sui metodi senza @PreAuthorize).
  */
 @Configuration
@@ -45,8 +45,7 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
-    // Dove si salva l'utente loggato tra una richiesta e l'altra: nella sessione HTTP.
-    // È un bean perché lo usa anche AutenticazioneController.login per salvarlo dopo l'autenticazione.
+    // Salva l'utente loggato tra una richiesta e l'altra nella sessione HTTP.
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
@@ -57,10 +56,9 @@ public class SecurityConfig {
                                                    SecurityContextRepository securityContextRepository,
                                                    GestoreErroriSicurezza gestoreErrori) {
         http
-                // Il client è JavaFX, non un browser: nessuna pagina di terzi può fargli inviare il cookie
-                // di sessione a sua insaputa, quindi la protezione CSRF non serve.
+                // Il client è JavaFX, non un browser, quindi la protezione CSRF non serve.
                 .csrf(csrf -> csrf.disable())
-                // Niente pagina di login né HTTP Basic: il login è POST /api/auth/login con corpo JSON.
+                // Niente pagina di login né HTTP Basic, il login è sul POST /api/auth/login
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 // Senza questo, ogni 401 creerebbe una sessione vuota per "ricordare" la richiesta.
@@ -71,8 +69,7 @@ public class SecurityConfig {
                         // Pagina di errore interna di Spring (500): altrimenti diventerebbe un 401.
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .anyRequest().authenticated())
-                // Logout gestito da Spring Security: invalida la sessione e risponde 204,
-                // anche se nessuno era loggato.
+                // Logout gestito da Spring Security: invalida la sessione e risponde 204 (anche se nessuno era loggato)
                 .logout(logout -> logout
                         .logoutRequestMatcher(PathPatternRequestMatcher.withDefaults()
                                 .matcher(HttpMethod.POST, "/api/auth/logout"))

@@ -10,13 +10,13 @@ public interface BugRepository extends JpaRepository<Bug, Integer> {
 
     List<Bug> findByAssegnatarioId(Integer assegnatarioId);
 
-    // getBugAssegnati(): prima i TODO poi i CHIUSO (ordine di dichiarazione dell'ENUM stato in
+    // getBugAssegnati(): prima gli aperti poi i chiusi (ordine di dichiarazione dell'ENUM stato del db (vedi
     // V1__init.sql), e in ogni gruppo i più recenti prima (a parità di data, id più alto prima).
     List<Bug> findByAssegnatarioIdOrderByStatoAscDataDescIdDesc(Integer assegnatarioId);
 
-    // Bug assegnati in un certo stato, più recenti prima (getBugAssegnatiAperti con TODO).
+    // Bug assegnati in un certo stato (aperto o chiuso), più recenti prima (per il getBugAssegnatiAperti).
     List<Bug> findByAssegnatarioIdAndStatoOrderByDataDescIdDesc(Integer assegnatarioId, StatoIssue stato);
 
-    // Numero di bug assegnati in un certo stato (carico corrente nei suggeriti, con TODO).
+    // Numero di bug assegnati in un certo stato(aperto o chiuso) (per carico corrente nei suggeriti).
     long countByAssegnatarioIdAndStato(Integer assegnatarioId, StatoIssue stato);
 }

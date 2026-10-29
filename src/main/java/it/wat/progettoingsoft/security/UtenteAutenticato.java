@@ -44,8 +44,8 @@ public class UtenteAutenticato implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<GrantedAuthority> autorità = new ArrayList<>();
-        autorità.add(new SimpleGrantedAuthority("ROLE_" + ruolo.name()));
-        return autorità;
+        List<GrantedAuthority> autorita = new ArrayList<>();
+        autorita.add(new SimpleGrantedAuthority("ROLE_" + ruolo.name()));
+        return autorita;
     }
 }

@@ -6,7 +6,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -15,9 +14,6 @@ public class IssueService {
 
     private final IssueRepository issueRepository;
 
-    public List<Issue> findAll() {
-        return issueRepository.findAll();
-    }
 
     public Issue findById(Integer id) {
         Optional<Issue> trovato = issueRepository.findById(id);
@@ -36,9 +32,6 @@ public class IssueService {
         return immagine;
     }
 
-    public Issue save(Issue issue) {
-        return issueRepository.save(issue);
-    }
 
     public void deleteById(Integer id) {
         issueRepository.deleteById(id);

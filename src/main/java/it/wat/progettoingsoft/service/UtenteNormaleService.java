@@ -23,8 +23,7 @@ public class UtenteNormaleService {
     private final BugRepository bugRepository;
     private final UtenteNormaleRepository utenteNormaleRepository;
 
-    // Un id di amministratore o stakeholder non è un UtenteNormale (il repository filtra sul
-    // discriminatore): dà lo stesso errore di un id inesistente.
+    // Un id di amministratore o stakeholder non è un UtenteNormale: dà lo stesso errore di un id inesistente.
     public UtenteNormale findById(Integer id) {
         Optional<UtenteNormale> trovato = utenteNormaleRepository.findById(id);
         if (trovato.isEmpty()) {
@@ -43,7 +42,7 @@ public class UtenteNormaleService {
 
     /**
      * UtenteNormale.getNewNotificheAndSegnaComeLette(): legge le notifiche non
-     * lette e le marca come lette. Le notifiche restituite hanno già letta = true,
+     * lette e le segna come lette. Le notifiche restituite hanno già letta = true,
      * come nel DB; più recenti prima.
      */
     @Transactional
@@ -56,7 +55,7 @@ public class UtenteNormaleService {
     }
 
     /**
-     * Numero di notifiche non lette, senza segnarle come lette (es. per il badge
+     * Numero di notifiche non lette, senza segnarle come lette (ex. per il badge
      * del front-end).
      */
     public long countNewNotifiche(Integer idUtente) {
@@ -64,15 +63,15 @@ public class UtenteNormaleService {
     }
 
     /**
-     * Numero di bug assegnati ancora aperti (TODO): il carico corrente mostrato
-     * nei suggerimenti di assegnazione (req. 14).
+     * Numero di bug assegnati ancora aperti (TODO): serve per il carico corrente mostrato
+     * nei suggerimenti di assegnazione.
      */
     public long countBugAssegnatiAperti(Integer idUtente) {
         return bugRepository.countByAssegnatarioIdAndStato(idUtente, StatoIssue.TODO);
     }
 
     /**
-     * UtenteNormale.getBugAssegnati(): i bug assegnati all'utente (req. 4), compresi
+     * UtenteNormale.getBugAssegnati(): i bug assegnati all'utente compresi
      * quelli chiusi. Prima i TODO poi i CHIUSO, e in ogni gruppo i più recenti prima.
      */
     public List<Bug> getBugAssegnati(Integer idUtente) {

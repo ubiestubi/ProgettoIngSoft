@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Corpo della richiesta di creazione utente (AmministratoreService.creaUtente).
- * Un ruolo diverso da AMMINISTRATORE/NORMALE/STAKEHOLDER rende il JSON illeggibile (→ 400).
  * Lunghezze massime come le colonne di Utenti.
  */
 public record CreaUtenteRequest(

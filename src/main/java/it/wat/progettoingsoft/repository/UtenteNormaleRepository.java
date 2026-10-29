@@ -10,9 +10,9 @@ import java.util.List;
 
 public interface UtenteNormaleRepository extends JpaRepository<UtenteNormale, Integer> {
 
-    // suggerisciAssegnatari() (req. 14): tutti gli utenti normali ordinati per numero di bug assegnati
-    // nello stato indicato (il carico corrente, con stato = TODO), dal meno carico; a parità, per cognome,
-    // nome ed email.
+    // suggerisciAssegnatari(): tutti gli utenti normali ordinati per numero di bug assegnati
+    // nello stato indicato (praticamente con stato = TODO è il carico corrente, dal meno carico al più carico.)
+    // A parità di carico l'ordine è per cognome, nome ed email.
     @Query("SELECT u FROM UtenteNormale u"
             + " ORDER BY (SELECT COUNT(b) FROM Bug b WHERE b.assegnatario = u AND b.stato = :stato) ASC,"
             + " u.cognome ASC, u.nome ASC, u.email ASC")

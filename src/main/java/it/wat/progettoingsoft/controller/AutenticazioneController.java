@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Login e utente corrente (docs/ContrattoLogin.md). Il logout (POST /api/auth/logout) lo gestisce
+ * Login e utente corrente. Il logout (POST /api/auth/logout) lo gestisce
  * direttamente Spring Security, vedi SecurityConfig.
  */
 @RestController
@@ -33,22 +33,21 @@ public class AutenticazioneController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
 
-    // Credenziali sbagliate: authenticate lancia BadCredentialsException → 401 (GlobalExceptionHandler).
+    // Credenziali sbagliate: authenticate lancia BadCredentialsException -> 401 (GlobalExceptionHandler).
     @PostMapping("/login")
     public UtenteDTO login(@Valid @RequestBody LoginRequest richiesta,
                            HttpServletRequest request, HttpServletResponse response) {
         Authentication autenticazione = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(richiesta.email(), richiesta.password()));
 
-        // Sessione nuova a ogni login: se ce n'era già una (es. un altro utente sullo stesso client),
+        // Sessione nuova a ogni login: se ce n'era già una (ex. un altro utente sullo stesso client)
         // la si chiude, così l'id di sessione usato prima del login non resta valido dopo.
         HttpSession vecchia = request.getSession(false);
         if (vecchia != null) {
             vecchia.invalidate();
         }
 
-        // Salvataggio esplicito dell'utente loggato nella sessione: da Spring Security 6 non è automatico
-        // quando il login è un controller nostro, e senza la richiesta successiva risponderebbe 401.
+        // Salvataggio dell'utente loggato nella sessione
         SecurityContext contesto = SecurityContextHolder.createEmptyContext();
         contesto.setAuthentication(autenticazione);
         SecurityContextHolder.setContext(contesto);

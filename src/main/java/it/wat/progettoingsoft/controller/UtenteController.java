@@ -36,7 +36,7 @@ public class UtenteController {
     private final UtenteService utenteService;
     private final UtenteNormaleService utenteNormaleService;
 
-    // Req. 1: nuova utenza (amministratore, normale o stakeholder). Email già in uso → 400.
+    // Nuovo utente. Email già in uso -> 400.
     @PostMapping
     public ResponseEntity<UtenteDTO> creaUtente(@Valid @RequestBody CreaUtenteRequest richiesta) {
         Utente utente = amministratoreService.creaUtente(richiesta.nome(), richiesta.cognome(), richiesta.email(),
@@ -44,18 +44,17 @@ public class UtenteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(UtenteDTO.da(utente));
     }
 
-    // Tutti gli utenti, in ordine di cognome e nome.
+    // Tutti gli utenti, in ordine cognome-nome.
     @GetMapping
     public List<UtenteDTO> elencaUtenti() {
-        List<UtenteDTO> risposta = new ArrayList<>();
-        for (Utente utente : utenteService.findAll()) {
-            risposta.add(UtenteDTO.da(utente));
-        }
-        return risposta;
+        // Soluzione proposta da SonarQube
+        return utenteService.findAll().stream()
+                .map(UtenteDTO::da)
+                .toList();
     }
 
-    // Req. 14: utenti normali dal meno carico, ciascuno con il numero di bug TODO assegnati.
-    // L'ordine lo dà già la query di suggerisciAssegnatari; qui si aggiunge solo il conteggio.
+    // Lista di utenti normali dal meno carico al più carico, ciascuno con il numero di bug aperti assegnati.
+    // L'ordine lo dà già la query di suggerisciAssegnatari, qui si aggiunge solo il conteggio.
     @GetMapping("/suggeriti")
     public List<AssegnatarioSuggeritoDTO> suggerisciAssegnatari() {
         List<AssegnatarioSuggeritoDTO> risposta = new ArrayList<>();

@@ -5,7 +5,7 @@ import it.wat.progettoingsoft.entities.Utente;
 import it.wat.progettoingsoft.security.UtenteAutenticato;
 
 /**
- * Utente nel JSON: senza password. Il ruolo lo dà la sottoclasse (Utente.getRuolo()).
+ * Utente DTO senza password. Il ruolo lo dà la sottoclasse (la prendo con Utente.getRuolo()).
  */
 public record UtenteDTO(Integer id, String nome, String cognome, String email, Ruolo ruolo) {
 

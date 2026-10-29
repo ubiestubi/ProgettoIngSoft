@@ -10,7 +10,6 @@ public interface UtenteRepository extends JpaRepository<Utente, Integer> {
 
     Optional<Utente> findByEmail(String email);
 
-    // Tutti gli utenti per cognome e nome (lista utenti dell'amministratore); l'email, univoca, dà un
-    // ordine stabile tra omonimi.
+    // Tutti gli utenti per cognome e nome. L'email è univoca
     List<Utente> findAllByOrderByCognomeAscNomeAscEmailAsc();
 }
