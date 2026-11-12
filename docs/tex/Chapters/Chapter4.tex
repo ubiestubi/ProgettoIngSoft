@@ -1,0 +1,289 @@
+%2. Design del Sistema
+
+%2.1 Obiettivi di design
+
+%Elenco dei design goal ricavati dai requisiti non funzionali (prestazioni, sicurezza, usabilità, manutenibilità…)
+%Eventuali compromessi tra obiettivi (es. sicurezza contro semplicità d’uso)
+
+%2.2 Architettura proposta
+
+%2.2.1 Stile architetturale adottato, ad esempio client-server a tre livelli (presentazione, logica, dati)
+%2.2.2 Decomposizione in sottosistemi: component diagram UML con i blocchi principali (frontend, backend, database, eventuali servizi esterni come email o pagamenti) e una breve descrizione di ciascuno
+%2.2.3 Comunicazione tra componenti: protocolli e formati (HTTP/REST, JSON), autenticazione (es. JWT o sessioni)
+%2.2.4 Architettura interna del backend ad alto livello, ad esempio a strati Controller → Service → Repository. Basta nominare gli strati; le classi vanno nel punto 3
+%2.2.5 Deployment: deployment diagram UML (container Docker, server, DB, rete)
+%2.2.6 Criteri di design adottati, uno per uno, ciascuno con dove e come è applicato
+%2.2.7 Motivazioni e alternative scartate (es. “perché un monolite modulare e non i microservizi: team piccolo, dominio limitato, deploy più semplice”)
+
+%2.3 Scelte tecnologiche
+
+%2.3.1 Front-end (framework, librerie UI)
+%2.3.2 Back-end (linguaggio, framework)
+%2.3.3 Persistenza: quale DBMS e perché (relazionale o NoSQL). Lo schema vero e proprio va nel punto 3
+%2.3.4 Infrastruttura e deploy (Docker, docker-compose, eventuale cloud)
+%2.3.5 Strumenti di supporto (build tool come Maven o Gradle, Git, SonarQube): basta citarli
+%2.3.6 Tabella riassuntiva con colonne Componente | Tecnologia | Alternative valutate | Motivazione
+\chapter{Design del sistema}
+\label{ChapterDesignSistema}
+
+In questo capitolo vengono descritte le strategie adottate per realizzare il sistema. Per prima cosa viene presentata l'architettura e la sua distribuzione sui nodi di esecuzione, poi i criteri di design che hanno guidato le scelte, la scomposizione del sistema in sottosistemi, ognuno sviluppato in modo indipendente dagli altri, e la comunicazione tra di essi. Infine vengono descritte le tecnologie adottate, con le motivazioni della loro scelta.
+
+%----------------------------------------------------------------------------------------
+\section{Panoramica dell'architettura}
+BugBoard26 è un sistema distribuito con architettura client-server a tre livelli (\textit{three-tier}): client JavaFX, back-end REST e database. Ogni livello ha un compito preciso e può essere eseguito su un nodo distinto.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{|p{0.25\linewidth}|p{0.25\linewidth}|p{0.42\linewidth}|}
+\hline
+\textbf{Livello} & \textbf{Realizzazione} & \textbf{Responsabilità} \\
+\hline
+Presentazione (\textit{client tier}) & Applicazione desktop JavaFX & Mostrare i dati e raccogliere le azioni dell'utente \\
+\hline
+Logica di business (\textit{application tier}) & Back-end Spring Boot & Validare i dati, applicare le regole di business, autenticare gli utenti e controllarne i permessi \\
+\hline
+Dati (\textit{database tier}) & Database MySQL & Memorizzare i dati in modo permanente e mantenerli coerenti \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Livello di presentazione}
+È la parte che l'utente vede e usa direttamente, costituendo l'interfaccia utente (UI) del sistema e l'User Experience (UX) complessiva. Riceve una richiesta dall'utente, la inoltra al back-end e mostra il risultato. \\
+In linea con i principi di separazione delle responsabilità, questo livello non implementa alcuna logica decisionale: non valuta la validità o l'ammissibilità delle operazioni richieste, ma si limita a demandare tali verifiche al livello sottostante e a rappresentare graficamente l'esito della risposta ricevuta.
+
+\subsection{Livello della logica di business}
+È il cuore dell'applicazione: qui si prendono le decisioni e si eseguono le operazioni che fanno funzionare il sistema. Controlla che i dati ricevuti siano validi, applica le regole di business e gestisce chi è autenticato e cosa può fare. Offre i suoi servizi al livello di presentazione tramite API REST, con dati in formato JSON, e si rivolge al livello dei dati per leggere o salvare informazioni.
+
+\subsection{Livello dei dati}
+È la parte in cui i dati vengono salvati in modo permanente, recuperati e mantenuti coerenti anche quando l'applicazione viene chiusa o riavviata. La coerenza è garantita dai vincoli dello schema, come le chiavi esterne, che impediscono per esempio di avere un'issue senza autore. Al database accede solo il back-end: il client non comunica mai direttamente con esso.
+
+\subsection{Perché conviene separare i livelli}
+\begin{itemize}
+  \item Ogni parte ha una sola responsabilità, quindi è più facile capire dove intervenire quando bisogna modificare qualcosa.
+  \item I livelli si possono cambiare in modo indipendente: si può rifare l'interfaccia, per esempio passando da desktop a web, senza toccare la logica, e il database resta invisibile al client.
+  \item Il database non è esposto all'esterno, e tutte le regole e i controlli dei permessi si trovano in un solo punto, sul server.
+  \item I livelli possono essere eseguiti su macchine diverse, come descritto nel paragrafo riguardante il deployment.
+\end{itemize}
+
+%----------------------------------------------------------------------------------------
+\section{Decomposizione del sistema}
+Per ridurre la complessità di BugBoard26, il sistema è stato decomposto in due sottosistemi principali: front-end e back-end. Lo sviluppo del front-end è stato assegnato a Giandomenico Iameo, quello del back-end a Ubaldo Musto. I due sottosistemi sono stati ulteriormente decomposti in parti più piccole, in base alle responsabilità che svolgono.
+
+\subsection{Front-end}
+Il \textit{Front-end} (o \textit{strato di presentazione}) provvede alla rappresentazione dei dati e a tutte le interazioni con l'utente. \\
+\indent La soluzione adottata per suddividere i moduli presenti all'interno di questo sottosistema si basa sul pattern \textbf{MVP-Passive} \textit{(Model-View-Presenter)}. Per una trattazione approfondita dei meccanismi di funzionamento e delle specifiche di questo pattern, si rimanda all'apposito paragrafo dedicato.
+
+Il diagramma successivo mostra la stratificazione del front-end e la collaborazione tra gli strati stessi.
+
+\begin{figure}[!ht] 
+\begin{center}
+\includegraphics[width=13cm]{Chapters/pattern-front-end.png}
+\end{center}
+\caption{Diagramma dei package del front-end}
+\label{fig:f1} 
+\end{figure}
+
+I componenti grafici e il layout dell'applicazione si trovano nello strato \textit{View}. Non contengono logica sui dati, ma si limitano a ricevere i valori già pronti dallo strato \textit{Presenter}. \\
+Sebbene la logica applicativa sia definita altrove, i componenti grafici mantengono comunque una natura reattiva rispetto alle interazioni dell’utente: a questo scopo, sono state configurate le azioni in risposta agli eventi generati dall'utente. 
+
+Il \textit{Presenter} rappresenta lo strato di orchestrazione. Il funzionamento di questo strato si basa su un modello lineare: Il \textit{Presenter} intercetta i dati provenienti dalle interfacce di vista, converte tali dati in conformità con il contratto di comunicazione definito con il back-end e inoltra la richiesta. Successivamente riceve l'esito della chiamata dal server e, avvalendosi di un componente di mapping (mapper), adatta i dati ricevuti per restituirli alla \textit{View} pronti per la visualizzazione.
+
+Rispetto al classico modello MVP, il front-end non integra un \textit{modello di dominio} locale, ma si affida a uno specifico livello \textit{Service} che comunica direttamente con il \textit{Model} del back-end. Il modello espresso dal front-end è più precisamente un \textit{modello di presentazione}. \\
+\indent Più nel dettaglio, a livello di vista è stato adottato il \textit{pattern Composite} per organizzare i componenti grafici in una struttura ad albero. La motivazione che ha spinto a scegliere tale pattern risiede nella natura del toolkit grafico di JavaFX: la cui architettura si fonda nativamente su un grafo di nodi. \\
+\indent Il DTO, invece, rappresenta il \textit{modello dei dati} e, insieme all’albero dei componenti grafici, rappresenta l'unico altro modello definito all'interno del sottosistema.
+
+La ragione che ha indotto a non definire un \textit{modello di dominio} locale è di natura progettuale e di ottimizzazione: Il font-end è un client "leggero": riceve i dati dal server in formato DTO, li traduce e li mostra. Un livello \textit{domain} avrebbe duplicato quello del server senza aggiungere regole.
+
+Gli strati di \textit{Adattamento} e \textit{Dati condivisi} non fanno parte di questo flusso, ma sono di supporto allo strato di \textit{Orchestrazione}. Il package \textit{Adattamento} traduce i dati in due sensi: costruisce le richieste da inviare al package \textit{Servizi} e converte le risposte in elementi visualizzabili, tramite interfacce che lo strato di \textit{Presentazione} implementa. Il package \textit{Dati condivisi} definisce il formato delle informazioni scambiate con il back-end ed è usato da  tutti gli strati che le maneggiano. Nessuno dei due è un passaggio obbligato per la richiesta: sono strumenti che l'orchestrazione impiega per trasformare correttamente i dati provenienti dall'interfaccia in richieste accettabili dal backend e le risposte del back-end in elementi che l’interfaccia può mostrare. \\ \\
+
+\subsection{Pattern MVP-\textit{Passive}}
+MVP-Passive è un modello architetturale comunemente utilizzato nello sviluppo di applicazioni mobili. Si tratta di un'evoluzione del modello MVC (\textit{Model-View-Controller}), incentrato su una separazione delle responsabilità che garantisce maggiore flessibilità e scalabilità.  \\
+\indent Il modello MVP è noto principalmente per semplificare la manutenibilità dell'applicazione, favorendone il miglioramento e la scalabilità nel tempo.
+
+Le proprietà principali di questo modello sono la rappresentazione dei dati e la definizione della logica di business dell'applicazione. È responsabile del recupero, dell'archiviazione e della manipolazione dei dati, nonché dell'applicazione delle regole aziendali. Il modello è indipendente dall'interfaccia utente e dovrebbe essere indipendente dall'implementazione specifica della vista (\textit{View}) e del presentatore (\textit{Presenter}).
+
+Il pattern si articola in tre componenti principali, come si nota dalla Figura 1.2.
+
+\begin{figure}[!ht] 
+\begin{center}
+\includegraphics[width=4cm]{Chapters/pattern.png}
+\end{center}
+\caption{Pattern MVP-passive}
+\label{fig:f1} 
+\end{figure}
+
+\begin{quote}
+\begin{enumerate}[label=\textit{\arabic*}]
+\item (\textit{View}): È responsabile della presentazione dei dati e dell'acquisizione dell'input dell'utente. È un \textit{componente passivo} che si basa sul \textit{Presenter} per aggiornare il proprio stato e gestire le interazioni dell'utente. \\
+La vista in genere è costituita da elementi visivi come i componenti grafici dell'interfaccia utente (UI) e il layout dell'applicazione.
+L'obiettivo principale di View è garantire che l'interfaccia utente sia reattiva, visivamente accattivante e facile da navigare.
+  
+\item (\textit{Presenter}): Il \textit{Presenter} funge da mediatore tra \textit{Model} e \textit{View}, orchestrando il flusso di dati e gestendo le interazioni dell'utente. È responsabile del recupero dei dati dal \textit{Model}, della loro elaborazione e dell'aggiornamento della \textit{View} di conseguenza. \\
+Il \textit{Presenter} gestisce inoltre gli eventi utente dalla \textit{View}, come i clic sui pulsanti o le modifiche di input, attivaando azioni specifiche in base a questi eventi. \\
+Separando gli aspetti della gestione dei dati (\textit{Model}) e dell'interfaccia utente (\textit{View}), \textit{Presenter} consente lo sviluppo di applicazioni più modulari, scalabili e manutenibili.
+
+\item (\textit{Model}):  rappresenta i dati e la logica aziendale dell'applicazione, simile al modello in MVC. È responsabile dell'elaborazione, archiviazione e gestione dei dati e dell'implementazione di tutte le regole aziendali necessarie. Il modello non comunica direttamente con la vista o il presentatore.
+\end{enumerate} 
+\end{quote}
+
+Concludendo questo paragrafo sugli obiettivi che permette di raggiungere questo pattern, si possono certamente menzionare la separazione delle responsabilità tra i componenti, la manutenibilità e la scalabilità dell'applicazione; proprietà fondamentali che consentono di soddisfare le richieste in continua evoluzione da parte dei clienti. \\
+\indent Come esemplificato da molte piattaforme, il modello può essere integrato perfettamente in vari strumenti e metodologie di sviluppo, consolidando ulteriormente la sua rilevanza e importanza nel mondo dello sviluppo di applicazioni.
+
+
+\subsection{Back-end: pattern Controller-Service-Repository}
+Il back-end è organizzato in livelli secondo il pattern Controller-Service-Repository. Lo abbiamo scelto perché separa in modo netto le responsabilità: i controller gestiscono la comunicazione HTTP con il client, i service contengono tutte le regole di business e i repository l'accesso al database. In questo modo la logica si trova in un unico punto e può essere riusata da più endpoint, ogni livello può cambiare senza toccare gli altri e i service possono essere testati in isolamento, sostituendo i repository con dei mock.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=10cm]{Chapters/controller.jpeg}
+\end{center}
+\caption{Pattern Controller-Service-Repository}
+\label{fig:controller-service-repository}
+\end{figure}
+
+\begin{itemize}
+  \item \textit{Controller}: in cima allo schema, ha il solo compito di esporre le funzionalità del sistema come API REST, in modo che possano essere usate da entità esterne, come il client.
+  \item \textit{Service}: contiene tutta la logica di business. Se ha bisogno di leggere o salvare dati, si rivolge a un repository; chi vuole accedere alla logica di business deve passare da un controller.
+  \item \textit{Repository}: in fondo allo schema, ha il compito di salvare e recuperare un certo insieme di dati.
+\end{itemize}
+
+\subsection{Back-end: Repository pattern}
+Per l'accesso ai dati abbiamo adottato il Repository pattern, che offre ai service un modo astratto di lavorare con i dati. Ogni entità del dominio ha un proprio repository, che si comporta come una collezione di oggetti: i service possono cercare, salvare ed eliminare elementi senza sapere come sono memorizzati nel database. \\
+\indent I repository sono interfacce: le operazioni CRUD di base (creazione, lettura, aggiornamento ed eliminazione) sono ereditate da Spring Data JPA, che ne genera l'implementazione, mentre le ricerche con filtri e ordinamenti sono query aggiuntive dichiarate nell'interfaccia stessa. In questo modo i service non contengono query né dettagli delle tabelle: un cambiamento nello schema si riflette sui repository e non sui service.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=8cm]{Chapters/Immagine.png}
+\end{center}
+\caption{Decomposizione del back-end}
+\label{fig:decomposizione-back-end}
+\end{figure}
+
+
+%----------------------------------------------------------------------------------------
+\section{Comunicazione tra front-end e back-end}
+Il client e il server comunicano tramite API REST su HTTP. Ogni operazione dell'utente corrisponde a una richiesta HTTP, con dati in formato JSON sia in richiesta sia in risposta; fanno eccezione le immagini allegate alle issue, che vengono scaricate con una richiesta separata come dati binari, per non appesantire gli elenchi. \\
+\indent Gli errori hanno sempre lo stesso formato: un codice HTTP (per esempio 400 per dati non validi, 403 per permessi insufficienti, 404 per una risorsa inesistente) e un corpo JSON con un messaggio che il client può mostrare all'utente.
+
+\subsection{Autenticazione}
+L'autenticazione usa Spring Security con la sessione HTTP: al login il server verifica email e password, crea una sessione e restituisce al client un cookie, che il client allega a tutte le richieste successive. Le password sono salvate solo come hash BCrypt. \\
+
+
+\subsection{Interfaccia delle API}
+La tabella seguente riassume gli endpoint esposti dal back-end. Tutti, tranne il login, richiedono l'autenticazione.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{0.10\linewidth}|p{0.38\linewidth}|p{0.18\linewidth}|p{0.24\linewidth}|}
+\hline
+\textbf{Metodo} & \textbf{Endpoint} & \textbf{Ruolo} & \textbf{Funzionalità} \\
+\hline
+POST & \texttt{/api/auth/login} & pubblico & Login \\
+GET & \texttt{/api/auth/me} & autenticato & Utente collegato \\
+POST & \texttt{/api/auth/logout} & autenticato & Logout \\
+\hline
+POST & \texttt{/api/utenti} & amministratore & Crea utente \\
+GET & \texttt{/api/utenti} & amministratore & Elenco utenti \\
+GET & \texttt{/api/utenti/suggeriti} & amministratore & Suggerimento assegnatari \\
+\hline
+GET & \texttt{/api/issues} & autenticato & Elenco con filtri e ordinamento \\
+GET & \texttt{/api/issues/ricerca} & autenticato & Ricerca per parola chiave \\
+GET & \texttt{/api/issues/\{id\}} & autenticato & Dettaglio issue \\
+GET & \texttt{/api/issues/\{id\}/immagine} & autenticato & Immagine allegata \\
+POST & \texttt{/api/issues} & amm., normale & Crea issue \\
+POST & \texttt{/api/issues/\{id\}/chiudi} & amministratore & Chiudi issue \\
+\hline
+POST & \texttt{/api/bugs/\{id\}/assegna} & amministratore & Assegna bug \\
+POST & \texttt{/api/bugs/\{id\}/duplicato} & amministratore & Segna come duplicato \\
+GET & \texttt{/api/bugs/assegnati} & normale & Bug assegnati \\
+GET & \texttt{/api/bugs/assegnati/aperti} & normale & Bug assegnati aperti \\
+\hline
+GET & \texttt{/api/notifiche} & normale & Tutte le notifiche \\
+GET & \texttt{/api/notifiche/conteggio} & normale & Numero di notifiche nuove \\
+POST & \texttt{/api/notifiche/leggi-nuove} & normale & Legge le notifiche nuove \\
+\hline
+\end{tabular}
+\end{center}
+%----------------------------------------------------------------------------------------
+\section{Deployment}
+Il diagramma di deployment mostra come i componenti software sono distribuiti sui nodi di esecuzione.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=\linewidth]{Chapters/deployment.png}
+\end{center}
+\caption{Diagramma di deployment}
+\label{fig:deployment}
+\end{figure}
+
+\begin{itemize}
+  \item \textit{Macchina dell'utente}: esegue il client JavaFX, che richiede un ambiente Java 21.
+  \item \textit{Host Docker}: esegue due container avviati insieme da Docker Compose. Il container \textit{server} contiene il back-end Spring Boot con il runtime Java 25 ed è raggiungibile sulla porta 8080; il container \textit{db} contiene MySQL 8.4 e salva i dati in un volume, così non si perdono quando il container viene ricreato.
+  \item \textit{Comunicazioni}: il client comunica con il back-end tramite HTTP, scambiando dati in formato JSON; il back-end comunica con il database tramite JDBC, sulla rete interna creata da Docker Compose.
+\end{itemize}
+
+Client e back-end si trovano quindi sempre su nodi distinti. Back-end e database sono in container separati e, nella configurazione consegnata, sullo stesso host; per spostarli su macchine diverse basta cambiare l'indirizzo del database nella configurazione del back-end.
+%----------------------------------------------------------------------------------------
+\section{Criteri di design}
+\begin{itemize}
+  \item \textit{Separazione delle responsabilità}: ogni livello e ogni componente ha un solo compito. Il principio è applicato a tutti i livelli: nell'architettura a tre livelli, nel pattern Controller-Service-Repository del back-end e nel pattern MVP del front-end.
+  \item \textit{Indipendenza tra front-end e back-end}: le due parti comunicano solo tramite API REST, secondo un contratto definito dai DTO. Il back-end non conosce il client, che può essere sostituito senza modifiche al server.
+  \item \textit{Stato e regole centralizzati}: dati, regole di business e controlli dei permessi stanno solo nel back-end. Il client mostra i dati e inoltra le richieste, ma non prende decisioni.
+  \item \textit{Astrazione per il riuso e l'estensione}: i ruoli degli utenti e i tipi di issue sono gerarchie di classi, l'accesso ai dati passa per interfacce \textit{repository} e i componenti grafici seguono il pattern \textit{Composite}.
+  \item \textit{Sicurezza per default}: ogni operazione, tranne il login, richiede l'autenticazione, e i permessi sono dichiarati su ogni endpoint.
+  \item \textit{Testabilità}: i service dipendono dai repository solo tramite interfacce, quindi possono essere testati in isolamento sostituendo i repository con dei mock.
+\end{itemize}
+
+
+%----------------------------------------------------------------------------------------
+
+\section{Scelte tecnologiche}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{0.3\linewidth}|p{0.6\linewidth}|}
+\hline
+\textbf{Ambito} & \textbf{Tecnologia} \\
+\hline
+Front-end & Java, JavaFX \\
+Back-end & Java, Spring Boot (Web, Data JPA, Security, Validation) \\
+Database & MySQL \\
+Gestione dello schema & Flyway \\
+Distribuzione & Docker, Docker Compose \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Spring Boot}
+Per il back-end abbiamo scelto Spring Boot, il framework più diffuso per lo sviluppo di servizi REST in Java. Spring Boot segue il paradigma \textit{convention over configuration}: fornisce una configurazione predefinita ragionevole per gli aspetti più comuni (server web integrato, connessione al database, conversione JSON), così gli sviluppatori devono specificare solo ciò che si discosta dallo standard. Questo riduce il codice di configurazione e il numero di decisioni da prendere, senza perdere flessibilità: ogni impostazione predefinita può essere sovrascritta quando serve. \\
+\indent Spring offre inoltre la \textit{dependency injection}: controller, service e repository vengono creati dal framework e collegati tra loro automaticamente, il che rende i componenti indipendenti e facili da testare. Infine il suo ecosistema mette a disposizione moduli già integrati per tutte le esigenze del progetto: Spring Web per le API REST, Spring Data JPA per l'accesso al database, Spring Security per l'autenticazione e i permessi, Jakarta Validation per il controllo dei dati in ingresso. Usare soluzioni standard e collaudate, invece di scriverle da zero, ci ha permesso di concentrarci sulla logica di business, riducendo gli errori soprattutto in un ambito delicato come la sicurezza.
+
+\subsection{MySQL e Flyway}
+Per la persistenza abbiamo usato MySQL, un database relazionale. I dati di BugBoard26 sono strutturati e collegati tra loro (un'issue ha un autore, un bug ha un assegnatario, una notifica ha un destinatario), quindi il modello relazionale, con le sue chiavi esterne e le transazioni, è il più adatto. \\
+\indent Lo schema non viene generato dal codice, ma è creato e aggiornato da Flyway tramite script SQL numerati (\textit{migration}), applicati automaticamente all'avvio del back-end. In questo modo ogni installazione, dal computer di sviluppo al container, ha esattamente lo stesso schema.
+
+\subsection{Docker}
+Docker è usato per automatizzare la distribuzione del back-end sotto forma di container, cioè un pacchetto che contiene l'applicazione insieme a tutto ciò che le serve per funzionare (il runtime Java e le librerie). Il container si comporta allo stesso modo su qualsiasi macchina, dal computer di sviluppo a un server nel cloud, ed elimina i problemi di installazione e configurazione dell'ambiente. \\
+\indent Il Dockerfile è di tipo \textit{multi-stage}: l'applicazione viene compilata in un'immagine con il JDK e Maven, mentre l'immagine finale contiene solo il runtime Java e l'applicazione, quindi è più leggera e non include strumenti di compilazione. Infine, con Docker Compose il back-end e il database MySQL si avviano insieme con un unico comando: il back-end parte solo quando il database è pronto, e i dati vengono conservati in un volume, così non si perdono quando i container vengono riavviati.
+
+\subsection{JavaFX}
+Per questa applicazione desktop è stato utilizzato JavaFX come toolkit grafico. Tra i suoi vantaggi merita di essere menzionata la gestione del layout, che permette di separarlo dal codice. Il layout si trova in file FXML, che descrivono in modo dichiarativo i componenti grafici dell’applicazione. Ogni file è associato a un controller, cioè a una classe che ne definisce il comportamento in risposta alle interazioni dell’utente: senza controller l’interfaccia è priva di comportamento. \\\
+\indent L’aspetto grafico è definito in fogli di stile CSS e si applica ai componenti tramite classi di stile, senza modificare il codice. Infine, lo stesso codice Java può essere eseguito su più piattaforme, come Windows, macOS e Linux.
+
+\subsection{Linguaggi e strumenti}
+Il sistema è stato sviluppato con un linguaggio orientato agli oggetti, Java, usato sia per il back-end sia per il front-end. Usare lo stesso linguaggio nei due componenti ha semplificato lo sviluppo e la collaborazione tra i membri del gruppo.
+\begin{itemize}
+  \item \textit{Java}: versione 25 per il back-end, con il framework Spring Boot, e versione 21 per il front-end, con la libreria JavaFX.
+  \item \textit{SQL}: usato per definire lo schema del database e i dati iniziali, negli script di migrazione gestiti da Flyway.
+  \item \textit{JPQL} (\textit{Java Persistence Query Language}): linguaggio di interrogazione simile a SQL, che lavora sulle classi Java invece che sulle tabelle. È usato nei repository per le ricerche con filtri e ordinamenti.
+  \item \textit{YAML}: formato del file di configurazione del back-end e del file di Docker Compose.
+\end{itemize}
+Gli strumenti utilizzati sono:
+\begin{itemize}
+  \item \textit{IntelliJ IDEA}: ambiente di sviluppo per entrambi i sottosistemi;
+  \item \textit{Maven}: gestione delle dipendenze e build automatica del back-end;
+  \item \textit{Visual Paradigm} e \textit{Modelio}: strumenti CASE per i diagrammi UML, rispettivamente del back-end e dei casi d'uso, e del front-end;
+  \item \textit{MySQL Workbench}: progettazione del modello ER e generazione automatica dello script SQL di creazione delle tabelle;
+  \item \textit{Git} e \textit{GitHub}: controllo di versione e hosting dei repository del front-end e del back-end;
+  \item \textit{SonarQube}: analisi statica della qualità del codice del back-end.
+\end{itemize}
