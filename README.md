@@ -12,7 +12,7 @@
 ## Avvio
 `docker compose up -d`
 
-Al primo avvio Docker può richiedere qualche minuto.
+Al primo avvio Docker può richiedere qualche minuto. 
 Il back-end parte automaticamente quando il database è pronto.
 
 Il back-end è raggiungibile all'indirizzo http://localhost:8080.
