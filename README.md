@@ -7,10 +7,10 @@
 1. Scaricare dal link i due file `compose.yaml` e `bugboard-server.tar.gz`
    e metterli nella stessa cartella.
 2. Aprire un terminale in quella cartella e caricare l'immagine del back-end:
-   docker load -i bugboard-server.tar.gz
+   `docker load -i bugboard-server.tar.gz`
 
 ## Avvio
-docker compose up -d
+`docker compose up -d`
 
 Al primo avvio Docker può richiedere qualche minuto. 
 Il back-end parte automaticamente quando il database è pronto.
