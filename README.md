@@ -28,7 +28,7 @@ Il sistema contiene già un amministratore:
 
 ## Link per il download
 FileSender:
-
+https://gigamail.unina.it/filesender/?s=download&token=f3ce2093-c788-40d5-a652-7f7b920f5285
 
 Mirror (Teams):
 https://communitystudentiunina-my.sharepoint.com/:f:/g/personal/u_musto_studenti_unina_it/IgArB_oG9uFMQ5LTcVQUakrmAcshTORCLn3K1V4J0z0thnY?e=BiqROx
